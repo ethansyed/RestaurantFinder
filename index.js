@@ -26,40 +26,62 @@ const reddit = new snoowrap({
 //  We can take the possesive + 1 extra word
 
 //2. Look for a title based off of all caps
+
+//Can be fined tuned 
 function extractRestaurantName(text) {
     // const doc = nlp(text);
     // const restaurantName = doc.possessives().out('text');
     let doc = nlp(text)
-    let restaurantName = doc.match('#Possessive #Noun').text() || doc.possessives().out('text');
+    let restaurantName = doc.match('#Possessive #Noun').text() || doc.possessives().out('text') || doc.match('#Noun').text()
+    restaurantName = restaurantName.replace(/[^a-zA-Z0-9]/g, '')
+    restaurantName = restaurantName.toLowerCase()
 
     return restaurantName;
 }
 
+//If a restaurant name does not occur more than once, remove it from the list
+//Eventually can be changed to listen to other metrics
+function extractMultipleMentions(restNameArr){
+    const stringCount = {};
+    const resultArray = [];
+
+    restNameArr.forEach((item) => {
+        stringCount[item] = (stringCount[item] || 0) + 1;
+        if (stringCount[item] === 2) {
+        resultArray.push(item);
+        }
+    });
+
+    return resultArray;
+}
+
 // Search for a subreddit
 //have user input valid city
-const subredditName = 'arlington'; // Replace with the keyword provided by the user
+const subredditName = 'austin'; // Replace with the keyword provided by the user
 //reddit.searchSubredditNames({query: subredditName}).then(console.log)
+let restNameArr = [];
+
 reddit.search({
     query: 'best restaurants',
     subreddit: subredditName,
     sort: 'hot',
     time: 'year',
-    limit : 2
+    limit : 10
 }).then(threadList =>{
     for(let i = 0; i < threadList.length; i++){
-        //console.log(myListing.at(i).selftext)
-        console.log('\nNEW THREAD!!!\n')
-        let threadHeadID = threadList.at(i).id
-
-        reddit.getSubmission(threadHeadID).comments.fetchAll({limit: 3}).then(comments => {
+        let threadHeadID = threadList.at(i).id //string 
+        reddit.getSubmission(threadHeadID).comments.fetchAll({limit: 10}).then(comments => {
             comments.forEach(comment => {
-                console.log('\n This is the original comment: ' + comment.body); // Print the body of each comment
-                console.log(extractRestaurantName(comment.body))
+                //console.log('\n Original comment: ' + comment.body.replace(/(\r\n|\n|\r)/gm, " ")); // Print the body of each comment without line break characters
+                let temp = extractRestaurantName(comment.body)
+                console.log('\nExtracted name: ' + temp);
+                restNameArr.push(temp);
             });
+            console.log(restNameArr)
         })
-       
     }
-    //console.log(myListing.at(0).selftext)
+    //restNameArr = extractMultipleMentions(restNameArr)
+    //console.log(restNameArr)
 })
 
 

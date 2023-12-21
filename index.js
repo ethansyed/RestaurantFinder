@@ -55,63 +55,42 @@ function extractMultipleMentions(restNameArr){
     return resultArray;
 }
 
-// Search for a subreddit
-//have user input valid city
-const subredditName = 'austin'; // Replace with the keyword provided by the user
-//reddit.searchSubredditNames({query: subredditName}).then(console.log)
-let restNameArr = [];
+restNameArr = []
 
-reddit.search({
-    query: 'best restaurants',
-    subreddit: subredditName,
-    sort: 'hot',
-    time: 'year',
-    limit : 10
-}).then(threadList =>{
-    for(let i = 0; i < threadList.length; i++){
-        let threadHeadID = threadList.at(i).id //string 
-        reddit.getSubmission(threadHeadID).comments.fetchAll({limit: 10}).then(comments => {
-            comments.forEach(comment => {
-                //console.log('\n Original comment: ' + comment.body.replace(/(\r\n|\n|\r)/gm, " ")); // Print the body of each comment without line break characters
-                let temp = extractRestaurantName(comment.body)
-                console.log('\nExtracted name: ' + temp);
-                restNameArr.push(temp);
-            });
-            console.log(restNameArr)
-        })
+async function processThreadList(threadList) {
+    for (let i = 0; i < threadList.length; i++) {
+      let threadHeadID = threadList[i].id;
+      await processComments(threadHeadID);
     }
-    //restNameArr = extractMultipleMentions(restNameArr)
-    //console.log(restNameArr)
+}
+  
+async function processComments(threadHeadID) {
+    let comments = await reddit.getSubmission(threadHeadID).comments.fetchAll({ limit: 10 });
+
+    for (let comment of comments) {
+        let temp = extractRestaurantName(comment.body);
+        console.log('\nExtracted name: ' + temp);
+        restNameArr.push(temp);
+    }
+}
+
+//input valid city
+const subredditName = 'arlington'; // Replace with the keyword provided by the user
+  
+reddit.search({
+query: 'best restaurants',
+subreddit: subredditName,
+sort: 'hot',
+time: 'year',
+limit: 5
 })
-
-
-// reddit.searchSubredditNames({ query: subredditName })
-//   .then(subredditNames => {
-//     // Get the first subreddit from the search results
-//     const subreddit = reddit.getSubreddit(subredditNames[0]);
-
-//     // Fetch the first 10 threads in the subreddit
-//     return subreddit.getHot({ limit: 10 });
-//   })
-//   .then(threads => {
-//     // Iterate through the threads
-//     threads.forEach(thread => {
-//       console.log('\nTitle:', thread.title);
-//       console.log('URL:', thread.url);
-
-//       // Fetch the first 10 comments of each thread
-//       thread.getComments({ limit: 10 })
-//         .then(comments => {
-//           console.log('\nComments:');
-//           comments.forEach(comment => {
-//             console.log(comment.body);
-//           });
-//         })
-//         .catch(error => {
-//           console.error('Error fetching comments:', error.message);
-//         });
-//     });
-//   })
-//   .catch(error => {
-//     console.error('Error searching subreddit:', error.message);
-//   });
+.then(threadList => {
+    return processThreadList(threadList);
+})
+.then(() => {
+    restNameArr = extractMultipleMentions(restNameArr) // not a good filtering method
+    console.log(restNameArr);
+})
+.catch(error => {
+    console.error('Error searching subreddit:', error.message);
+});

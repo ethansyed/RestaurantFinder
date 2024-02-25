@@ -31,12 +31,21 @@ const reddit = new snoowrap({
 function extractRestaurantName(text) {
     // const doc = nlp(text);
     // const restaurantName = doc.possessives().out('text');
-    let doc = nlp(text)
-    let restaurantName = doc.match('#Possessive #Noun').text() || doc.possessives().out('text') || doc.match('#Noun').text()
-    restaurantName = restaurantName.replace(/[^a-zA-Z0-9]/g, '')
-    restaurantName = restaurantName.toLowerCase()
+    // let doc = nlp(text)
+    // let restaurantName =  doc.match('#Person #Noun').text()
+    // // || doc.match('#Possessive #Noun').text() || doc.possessives().out('text')
+    // restaurantName = restaurantName.replace(/[^a-zA-Z0-9]/g, '')
+    // restaurantName = restaurantName.toLowerCase()
 
-    return restaurantName;
+    // Use a regular expression to match capitalized words
+    const regex = /\b[A-Z][a-z']+\b/g;
+    const matches = text.match(regex);
+
+    // Filter out common non-restaurant words
+    const filteredMatches = matches.filter(name => !['the', 'and', 'is', 'in', 'on', 'at'].includes(name.toLowerCase()));
+
+    // Join the filtered matches into a single string
+    return filteredMatches.join(', ');
 }
 
 //If a restaurant name does not occur more than once, remove it from the list
@@ -57,32 +66,15 @@ function extractMultipleMentions(restNameArr){
 
 restNameArr = []
 
-async function processThreadList(threadList) {
-    for (let i = 0; i < threadList.length; i++) {
-      let threadHeadID = threadList[i].id;
-      await processComments(threadHeadID);
-    }
-}
-  
-async function processComments(threadHeadID) {
-    let comments = await reddit.getSubmission(threadHeadID).comments.fetchAll({ limit: 10 });
-
-    for (let comment of comments) {
-        let temp = extractRestaurantName(comment.body);
-        console.log('\nExtracted name: ' + temp);
-        restNameArr.push(temp);
-    }
-}
-
 //input valid city
-const subredditName = 'arlington'; // Replace with the keyword provided by the user
+const subredditName = 'austin'; // Replace with the keyword provided by the user
   
 reddit.search({
 query: 'best restaurants',
 subreddit: subredditName,
-sort: 'hot',
-time: 'year',
-limit: 5
+sort: 'relevance',
+time: 'all',
+limit: 0,
 })
 .then(threadList => {
     return processThreadList(threadList);
@@ -94,3 +86,22 @@ limit: 5
 .catch(error => {
     console.error('Error searching subreddit:', error.message);
 });
+
+
+async function processThreadList(threadList) {
+    for (let i = 0; i < threadList.length; i++) {
+      let threadHeadID = threadList[i].id;
+      await processComments(threadHeadID);
+    }
+}
+  
+async function processComments(threadHeadID) {
+    let comments = await reddit.getSubmission(threadHeadID).comments.fetchAll({ limit: 1 });
+
+    for (let comment of comments) {
+        console.log('\nOriginal text: ' + comment.body);
+        let temp = extractRestaurantName(comment.body);
+        console.log('\nExtracted name: ' + temp);
+        restNameArr.push(temp);
+    }
+}

@@ -1,7 +1,7 @@
 # Local Restaurant Finder
 
 ## Purpose
-To easily find and recommend highly rated **locally** owned restaurant's / food stops\
+To easily find and recommend highly rated **locally** owned restaurant's / food spots
 
 #### Personal Context
 One of my hobbies is finding local restuarants / mom & pop shops in my city to visit\
@@ -12,8 +12,8 @@ My goal is to streamline this process and have highly rated locally owned restau
 ## Structure & Plans
 
 ### Current State
-Currently serves as an API endpoint that takes a city name and parses reddit to find posts containing positive sentiment about locally owned restaurants.\
-The endpoint returns a list of restaurants identified
+- Currently serves as an API endpoint that takes a city name and parses reddit to find posts containing positive sentiment about locally owned restaurants.
+- The endpoint returns a array of restaurants identified
 
 ### Future Plans
 - Build a frontend for Users to visually interact with
